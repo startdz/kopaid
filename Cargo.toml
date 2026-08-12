@@ -1,0 +1,15 @@
+[package]
+name = "kopaid"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix-web="4"
+derive_more = { version = "2.1.1", features = ["display"] }
+dotenvy = "0.15.7"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "postgres", "uuid", "time", "migrate"] }
+time = { version = "0.3.55", features = ["serde"] }
+tokio = { version = "1.53.1", features = ["full"] }
+uuid = { version = "1.24.0", features = ["v7", "serde"] }
