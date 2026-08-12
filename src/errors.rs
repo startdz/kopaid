@@ -1,5 +1,6 @@
 use actix_web::{HttpResponse, ResponseError};
 use derive_more::Display;
+use validator::ValidationErrors;
 
 #[derive(Debug, Display)]
 pub enum AppError {
@@ -8,6 +9,12 @@ pub enum AppError {
 
     #[display("Username or Email already exists")]
     DuplicateUser,
+
+    #[display("Validation error")]
+    Validation(ValidationErrors),
+
+    #[display("Internal Server Error")]
+    Internal,
 }
 
 impl ResponseError for AppError {
@@ -17,7 +24,16 @@ impl ResponseError for AppError {
                 "message": self.to_string()
             })),
 
+            Self::Validation(errors) => HttpResponse::BadRequest().json(serde_json::json!({
+                "message": "Validation failed",
+                "errors": errors
+            })),
+
             Self::Database => HttpResponse::InternalServerError().json(serde_json::json!({
+                "message": self.to_string()
+            })),
+
+            Self::Internal => HttpResponse::InternalServerError().json(serde_json::json!({
                 "message": self.to_string()
             })),
         }

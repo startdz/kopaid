@@ -1,5 +1,6 @@
 use actix_web::{HttpResponse, web};
 use sqlx::PgPool;
+use validator::Validate;
 
 use super::{dto::CreateUserRequest, service};
 
@@ -23,6 +24,10 @@ pub async fn create_user(
     pool: web::Data<PgPool>,
     body: web::Json<CreateUserRequest>,
 ) -> Result<HttpResponse, crate::errors::AppError> {
+    // validate body
+    body.validate()
+        .map_err(|error| crate::errors::AppError::Validation(error))?;
+
     let user = service::create_user(pool.get_ref(), &body).await?;
 
     Ok(HttpResponse::Created().json(serde_json::json!({

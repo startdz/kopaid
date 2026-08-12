@@ -1,9 +1,11 @@
+use super::dto::{CreateUserRequest, UserResponse};
+use crate::errors::AppError;
+use argon2::{
+    Argon2,
+    password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
+};
 use sqlx::PgPool;
 use uuid::Uuid;
-
-use crate::errors::AppError;
-
-use super::dto::{CreateUserRequest, UserResponse};
 
 pub async fn list_users(pool: &PgPool) -> Result<Vec<UserResponse>, sqlx::Error> {
     let users = sqlx::query_as!(
@@ -28,6 +30,15 @@ pub async fn create_user(
     request: &CreateUserRequest,
 ) -> Result<UserResponse, AppError> {
     let user_id = Uuid::now_v7();
+    let salt = SaltString::generate(&mut OsRng);
+    let password_hash = Argon2::default()
+        .hash_password(request.password_hash.as_bytes(), &salt)
+        .map_err(|error| {
+            eprintln!("Failed to hash password: {error}");
+
+            AppError::Internal
+        })?
+        .to_string();
 
     let user = sqlx::query!(
         r#"
@@ -43,7 +54,7 @@ pub async fn create_user(
         user_id,
         request.username,
         request.email,
-        request.password_hash
+        password_hash
     )
     .fetch_one(pool)
     .await
