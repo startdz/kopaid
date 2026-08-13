@@ -4,6 +4,7 @@ use crate::{
     infrastructure::database::{create_pool, run_migrations},
     modules::{
         auth::handler::login,
+        permissions::handler::{create_permission, list_permissions},
         roles::handler::{create_role, list_roles},
         users::handler::{assign_role, create_user, list_users},
     },
@@ -48,6 +49,11 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                                 web::scope("/roles")
                                     .route("", web::get().to(list_roles))
                                     .route("", web::post().to(create_role)),
+                            )
+                            .service(
+                                web::scope("/permissions")
+                                    .route("", web::get().to(list_permissions))
+                                    .route("", web::post().to(create_permission)),
                             )
                             // HEALTY CHECK
                             .service(
