@@ -1,7 +1,10 @@
 use super::{dto::CreateUserRequest, service};
-use crate::{errors::AppError, middleware::current_user::CurrentUser};
+use crate::{
+    errors::AppError, middleware::current_user::CurrentUser, modules::users::dto::AssignRoleRequest,
+};
 use actix_web::{HttpResponse, web};
 use sqlx::PgPool;
+use uuid::Uuid;
 use validator::Validate;
 
 // tetap mengadopsi current user agar menandakan aja kalo handler ini butuh authentication.
@@ -43,4 +46,15 @@ pub async fn create_user(
     Ok(HttpResponse::Created().json(serde_json::json!({
         "data": user
     })))
+}
+
+pub async fn assign_role(
+    current_user: CurrentUser,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<AssignRoleRequest>,
+) -> Result<HttpResponse, AppError> {
+    println!("Updated by user: {}", current_user.id);
+    service::assign_role(pool.get_ref(), path.into_inner(), body.role_id).await?;
+    Ok(HttpResponse::NoContent().finish())
 }

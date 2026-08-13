@@ -4,7 +4,8 @@ use crate::{
     infrastructure::database::{create_pool, run_migrations},
     modules::{
         auth::handler::login,
-        users::handler::{create_user, list_users},
+        roles::handler::{create_role, list_roles},
+        users::handler::{assign_role, create_user, list_users},
     },
 };
 use actix_web::{App, HttpServer, web};
@@ -29,15 +30,29 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         App::new()
             .app_data(config.clone())
             .app_data(pool.clone())
-            .route("/health", web::get().to(health))
             .service(
                 web::scope("/api/v1")
+                    // PUBLIC
                     .service(web::scope("/auth").route("/login", web::post().to(login)))
+                    // PROTECTED
                     .service(
-                        web::scope("/users")
+                        web::scope("")
                             .wrap(crate::middleware::auth::AuthMiddleware)
-                            .route("", web::get().to(list_users))
-                            .route("", web::post().to(create_user)),
+                            .service(
+                                web::scope("/users")
+                                    .route("", web::get().to(list_users))
+                                    .route("", web::post().to(create_user))
+                                    .route("/{id}/role", web::patch().to(assign_role)),
+                            )
+                            .service(
+                                web::scope("/roles")
+                                    .route("", web::get().to(list_roles))
+                                    .route("", web::post().to(create_role)),
+                            )
+                            // HEALTY CHECK
+                            .service(
+                                web::scope("/monitor").route("/health", web::get().to(health)),
+                            ),
                     ),
             )
     })

@@ -1,5 +1,5 @@
 use super::dto::{CreateUserRequest, UserResponse};
-use crate::errors::AppError::{self, Conflict, Database};
+use crate::errors::AppError::{self, Conflict, Database, NotFound};
 use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
@@ -77,4 +77,30 @@ pub async fn create_user(
         username: user.username,
         email: user.email,
     })
+}
+
+pub async fn assign_role(pool: &PgPool, user_id: Uuid, role_id: Uuid) -> Result<(), AppError> {
+    let result = sqlx::query!(
+        r#"
+        UPDATE users
+        SET
+            role_id = $1,
+            updated_at = NOW()
+        WHERE id = $2
+        "#,
+        role_id,
+        user_id
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        eprintln!("Failed to assign role {error}");
+        Database
+    })?;
+
+    if result.rows_affected() == 0 {
+        return Err(NotFound);
+    }
+
+    Ok(())
 }

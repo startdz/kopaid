@@ -18,6 +18,9 @@ pub enum AppError {
 
     #[display("Validation Error")]
     Validation(ValidationErrors),
+
+    #[display("Not Found")]
+    NotFound,
 }
 
 impl ResponseError for AppError {
@@ -41,6 +44,13 @@ impl ResponseError for AppError {
                 "error": {
                     "code": "CONFLICT",
                     "message": "Resource already exists"
+                }
+            })),
+
+            Self::NotFound => HttpResponse::NotFound().json(serde_json::json!({
+                "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource not found"
                 }
             })),
 

@@ -20,3 +20,8 @@ pub struct UserResponse {
     pub username: String,
     pub email: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct AssignRoleRequest {
+    pub role_id: Uuid,
+}
