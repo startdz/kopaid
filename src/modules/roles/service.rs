@@ -66,3 +66,32 @@ pub async fn create_role(
         description: role.description,
     })
 }
+
+pub async fn assign_permission(
+    pool: &PgPool,
+    role_id: Uuid,
+    permission_id: Uuid,
+) -> Result<(), AppError> {
+    sqlx::query!(
+        r#"
+            INSERT INTO role_permissions (role_id, permission_id)
+            VALUES ($1, $2)
+        "#,
+        role_id,
+        permission_id
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        if let sqlx::Error::Database(db_error) = &error {
+            if db_error.constraint() == Some("role_permissions_pkey") {
+                return Conflict;
+            }
+        }
+
+        eprintln!("Failed to assign permission: {error}");
+        Database
+    })?;
+
+    Ok(())
+}

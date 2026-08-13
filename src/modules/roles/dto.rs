@@ -15,3 +15,8 @@ pub struct RoleResponse {
     pub name: String,
     pub description: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct AssignPermissionRequest {
+    pub permission_id: Uuid,
+}

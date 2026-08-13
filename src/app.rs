@@ -5,7 +5,7 @@ use crate::{
     modules::{
         auth::handler::login,
         permissions::handler::{create_permission, list_permissions},
-        roles::handler::{create_role, list_roles},
+        roles::handler::{assign_permission, create_role, list_roles},
         users::handler::{assign_role, create_user, list_users},
     },
 };
@@ -48,7 +48,8 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                             .service(
                                 web::scope("/roles")
                                     .route("", web::get().to(list_roles))
-                                    .route("", web::post().to(create_role)),
+                                    .route("", web::post().to(create_role))
+                                    .route("/{id}/permission", web::post().to(assign_permission)),
                             )
                             .service(
                                 web::scope("/permissions")

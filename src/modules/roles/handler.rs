@@ -1,10 +1,14 @@
 use crate::{
     errors::AppError::{self, Validation},
     middleware::current_user::CurrentUser,
-    modules::roles::{dto::CreateRoleRequest, service},
+    modules::roles::{
+        dto::{AssignPermissionRequest, CreateRoleRequest},
+        service,
+    },
 };
 use actix_web::{HttpResponse, web};
 use sqlx::PgPool;
+use uuid::Uuid;
 use validator::Validate;
 
 pub async fn list_roles(
@@ -30,4 +34,14 @@ pub async fn create_role(
     Ok(HttpResponse::Created().json(serde_json::json!({
         "data": role
     })))
+}
+
+pub async fn assign_permission(
+    _current_user: CurrentUser,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<AssignPermissionRequest>,
+) -> Result<HttpResponse, AppError> {
+    service::assign_permission(pool.get_ref(), path.into_inner(), body.permission_id).await?;
+    Ok(HttpResponse::NoContent().finish())
 }
