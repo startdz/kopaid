@@ -1,10 +1,13 @@
+use super::{dto::CreateUserRequest, service};
+use crate::{errors::AppError, middleware::current_user::CurrentUser};
 use actix_web::{HttpResponse, web};
 use sqlx::PgPool;
 use validator::Validate;
 
-use super::{dto::CreateUserRequest, service};
-
-pub async fn list_users(pool: web::Data<PgPool>) -> HttpResponse {
+// tetap mengadopsi current user agar menandakan aja kalo handler ini butuh authentication.
+// tapi middleware current user ini bakal akan berguna jika sudah menerapkan permission dan role.
+// untuk saat ini gunakan dulu _current_user untuk adopsi pertama kali.
+pub async fn list_users(_current_user: CurrentUser, pool: web::Data<PgPool>) -> HttpResponse {
     match service::list_users(pool.get_ref()).await {
         Ok(users) => HttpResponse::Ok().json(serde_json::json!({
             "data": users
@@ -20,13 +23,20 @@ pub async fn list_users(pool: web::Data<PgPool>) -> HttpResponse {
     }
 }
 
+// disini juga menggunakan middleware current_user
+// akan lebih relevan jika sudah menerapkan role & permission
+// untuk saat ini adopsi simple dahulu
+// penggunaan current_user ini untuk audit log kedepannya.
 pub async fn create_user(
+    current_user: CurrentUser,
     pool: web::Data<PgPool>,
     body: web::Json<CreateUserRequest>,
-) -> Result<HttpResponse, crate::errors::AppError> {
+) -> Result<HttpResponse, AppError> {
+    println!("Created by user: {}", current_user.id);
+
     // validate body
     body.validate()
-        .map_err(|error| crate::errors::AppError::Validation(error))?;
+        .map_err(|error| AppError::Validation(error))?;
 
     let user = service::create_user(pool.get_ref(), &body).await?;
 

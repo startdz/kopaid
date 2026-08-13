@@ -45,8 +45,5 @@ pub async fn login(
         AppError::Internal
     })?;
 
-    println!("User found: {}", user.email);
-    println!("Password hash: {}", user.password_hash);
-
     Ok(access_token)
 }

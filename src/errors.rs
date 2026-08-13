@@ -4,45 +4,62 @@ use validator::ValidationErrors;
 
 #[derive(Debug, Display)]
 pub enum AppError {
-    #[display("Database Error")]
+    #[display("Database error")]
     Database,
 
-    #[display("Username or Email already exists")]
-    DuplicateUser,
+    #[display("Invalid credentials")]
+    InvalidCredentials,
 
-    #[display("Validation error")]
-    Validation(ValidationErrors),
+    #[display("Conflict")]
+    Conflict,
 
     #[display("Internal Server Error")]
     Internal,
 
-    #[display("Invalid email or password")]
-    InvalidCredentials,
+    #[display("Validation Error")]
+    Validation(ValidationErrors),
 }
 
 impl ResponseError for AppError {
-    fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
+    fn error_response(&self) -> HttpResponse {
         match self {
-            Self::DuplicateUser => HttpResponse::Conflict().json(serde_json::json!({
-                "message": self.to_string()
-            })),
-
-            Self::Validation(errors) => HttpResponse::BadRequest().json(serde_json::json!({
-                "message": "Validation failed",
-                "errors": errors
-            })),
-
             Self::Database => HttpResponse::InternalServerError().json(serde_json::json!({
-                "message": self.to_string()
-            })),
-
-            Self::Internal => HttpResponse::InternalServerError().json(serde_json::json!({
-                "message": self.to_string()
+                "error": {
+                    "code": "DATABASE_ERROR",
+                    "message": "Database error"
+                }
             })),
 
             Self::InvalidCredentials => HttpResponse::Unauthorized().json(serde_json::json!({
-                "message": "Invalid email or password"
+                "error": {
+                    "code": "INVALID_CREDENTIALS",
+                    "message": "Invalid email or password"
+                }
             })),
+
+            Self::Conflict => HttpResponse::Conflict().json(serde_json::json!({
+                "error": {
+                    "code": "CONFLICT",
+                    "message": "Resource already exists"
+                }
+            })),
+
+            Self::Internal => HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "Internal server error"
+                }
+            })),
+
+            Self::Validation(error) => {
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": {
+                        "code": "VALIDATION_ERROR",
+                        "message": "Validation failed",
+                        "details": error
+                    }
+                }))
+            }
         }
     }
 }

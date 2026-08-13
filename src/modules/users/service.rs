@@ -1,5 +1,5 @@
 use super::dto::{CreateUserRequest, UserResponse};
-use crate::errors::AppError;
+use crate::errors::AppError::{self, Conflict, Database};
 use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
@@ -65,11 +65,11 @@ pub async fn create_user(
             if db_error.constraint() == Some("users_username_key")
                 || db_error.constraint() == Some("users_email_key")
             {
-                return AppError::DuplicateUser;
+                return Conflict;
             }
         }
 
-        AppError::Database
+        Database
     })?;
 
     Ok(UserResponse {
