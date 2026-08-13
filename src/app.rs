@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     health::health,
-    infrastructure::database::{create_pool, run_migrations},
+    infrastructure::database::{create_pool, run_migrations, run_seeds},
     modules::{
         auth::handler::login,
         permissions::handler::{create_permission, list_permissions},
@@ -19,6 +19,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
     run_migrations(&pool)
         .await
         .expect("Failed to run migrations");
+    run_seeds(&pool).await.expect("Failed to run seeders");
 
     let host = config.host.clone();
     let port = config.port;

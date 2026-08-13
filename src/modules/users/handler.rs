@@ -1,4 +1,5 @@
 use super::{dto::CreateUserRequest, service};
+use crate::infrastructure::auth::authorization::require_permission;
 use crate::{
     errors::AppError, middleware::current_user::CurrentUser, modules::users::dto::AssignRoleRequest,
 };
@@ -10,20 +11,17 @@ use validator::Validate;
 // tetap mengadopsi current user agar menandakan aja kalo handler ini butuh authentication.
 // tapi middleware current user ini bakal akan berguna jika sudah menerapkan permission dan role.
 // untuk saat ini gunakan dulu _current_user untuk adopsi pertama kali.
-pub async fn list_users(_current_user: CurrentUser, pool: web::Data<PgPool>) -> HttpResponse {
-    match service::list_users(pool.get_ref()).await {
-        Ok(users) => HttpResponse::Ok().json(serde_json::json!({
-            "data": users
-        })),
+pub async fn list_users(
+    current_user: CurrentUser,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, AppError> {
+    require_permission(pool.get_ref(), current_user.id, "user:read").await?;
 
-        Err(error) => {
-            eprintln!("Failed to fetch users: {error}");
+    let users = service::list_users(pool.get_ref()).await?;
 
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "message": "Failed to fetch users"
-            }))
-        }
-    }
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "data": users
+    })))
 }
 
 // disini juga menggunakan middleware current_user
@@ -35,7 +33,7 @@ pub async fn create_user(
     pool: web::Data<PgPool>,
     body: web::Json<CreateUserRequest>,
 ) -> Result<HttpResponse, AppError> {
-    println!("Created by user: {}", current_user.id);
+    require_permission(pool.get_ref(), current_user.id, "user:create").await?;
 
     // validate body
     body.validate()
@@ -54,7 +52,7 @@ pub async fn assign_role(
     path: web::Path<Uuid>,
     body: web::Json<AssignRoleRequest>,
 ) -> Result<HttpResponse, AppError> {
-    println!("Updated by user: {}", current_user.id);
+    require_permission(pool.get_ref(), current_user.id, "user:assigned").await?;
     service::assign_role(pool.get_ref(), path.into_inner(), body.role_id).await?;
     Ok(HttpResponse::NoContent().finish())
 }

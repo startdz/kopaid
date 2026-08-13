@@ -7,7 +7,7 @@ use argon2::{
 use sqlx::PgPool;
 use uuid::Uuid;
 
-pub async fn list_users(pool: &PgPool) -> Result<Vec<UserResponse>, sqlx::Error> {
+pub async fn list_users(pool: &PgPool) -> Result<Vec<UserResponse>, AppError> {
     let users = sqlx::query_as!(
         UserResponse,
         r#"
@@ -20,7 +20,11 @@ pub async fn list_users(pool: &PgPool) -> Result<Vec<UserResponse>, sqlx::Error>
         "#
     )
     .fetch_all(pool)
-    .await?;
+    .await
+    .map_err(|error| {
+        eprintln!("Failed to list users: {error}");
+        AppError::Database
+    })?;
 
     Ok(users)
 }

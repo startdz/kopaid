@@ -21,6 +21,9 @@ pub enum AppError {
 
     #[display("Not Found")]
     NotFound,
+
+    #[display("Forbidden")]
+    Forbidden,
 }
 
 impl ResponseError for AppError {
@@ -58,6 +61,13 @@ impl ResponseError for AppError {
                 "error": {
                     "code": "INTERNAL_SERVER_ERROR",
                     "message": "Internal server error"
+                }
+            })),
+
+            Self::Forbidden => HttpResponse::Forbidden().json(serde_json::json!({
+                "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You do not have permission to perform this action"
                 }
             })),
 
