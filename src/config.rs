@@ -1,9 +1,11 @@
 use std::env;
 
+#[derive(Clone)]
 pub struct Config {
     pub database_url: String,
     pub host: String,
     pub port: u16,
+    pub jwt_secret: String,
 }
 
 impl Config {
@@ -17,10 +19,13 @@ impl Config {
             .parse()
             .unwrap_or(8080);
 
+        let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+
         Ok(Self {
             database_url,
             host,
             port,
+            jwt_secret,
         })
     }
 }

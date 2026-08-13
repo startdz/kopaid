@@ -15,6 +15,9 @@ pub enum AppError {
 
     #[display("Internal Server Error")]
     Internal,
+
+    #[display("Invalid email or password")]
+    InvalidCredentials,
 }
 
 impl ResponseError for AppError {
@@ -35,6 +38,10 @@ impl ResponseError for AppError {
 
             Self::Internal => HttpResponse::InternalServerError().json(serde_json::json!({
                 "message": self.to_string()
+            })),
+
+            Self::InvalidCredentials => HttpResponse::Unauthorized().json(serde_json::json!({
+                "message": "Invalid email or password"
             })),
         }
     }
