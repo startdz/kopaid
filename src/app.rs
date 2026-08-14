@@ -4,12 +4,16 @@ use crate::{
     infrastructure::database::{create_pool, run_migrations, run_seeds},
     modules::{
         auth::handler::login,
+        members::handler::{create_member, list_members},
         permissions::handler::{create_permission, list_permissions},
         roles::handler::{assign_permission, create_role, list_roles},
         users::handler::{assign_role, create_user, list_users},
     },
 };
-use actix_web::{App, HttpServer, web};
+use actix_web::{
+    App, HttpServer,
+    web::{self},
+};
 
 pub async fn run(config: Config) -> std::io::Result<()> {
     let pool = create_pool(&config.database_url)
@@ -19,6 +23,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
     run_migrations(&pool)
         .await
         .expect("Failed to run migrations");
+
     run_seeds(&pool, &config)
         .await
         .expect("Failed to run seeders");
@@ -58,6 +63,11 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                                 web::scope("/permissions")
                                     .route("", web::get().to(list_permissions))
                                     .route("", web::post().to(create_permission)),
+                            )
+                            .service(
+                                web::scope("/members")
+                                    .route("", web::get().to(list_members))
+                                    .route("", web::post().to(create_member)),
                             )
                             // HEALTY CHECK
                             .service(
