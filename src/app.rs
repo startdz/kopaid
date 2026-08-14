@@ -7,6 +7,7 @@ use crate::{
         members::handler::{create_member, list_members},
         permissions::handler::{create_permission, list_permissions},
         roles::handler::{assign_permission, create_role, list_roles},
+        savings_products::handler::{create_savings_products, list_savings_products},
         users::handler::{assign_role, create_user, list_users},
     },
 };
@@ -68,6 +69,11 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                                 web::scope("/members")
                                     .route("", web::get().to(list_members))
                                     .route("", web::post().to(create_member)),
+                            )
+                            .service(
+                                web::scope("/savings-products")
+                                    .route("", web::get().to(list_savings_products))
+                                    .route("", web::post().to(create_savings_products)),
                             )
                             // HEALTY CHECK
                             .service(
