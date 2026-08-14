@@ -6,6 +6,10 @@ pub struct Config {
     pub host: String,
     pub port: u16,
     pub jwt_secret: String,
+
+    pub seed_superadmin_email: String,
+    pub seed_superadmin_username: String,
+    pub seed_superadmin_password: String,
 }
 
 impl Config {
@@ -21,11 +25,23 @@ impl Config {
 
         let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
+        let seed_superadmin_email =
+            env::var("SEED_SUPERADMIN_EMAIL").expect("SEED_SUPERADMIN_EMAIL must be set");
+
+        let seed_superadmin_username =
+            env::var("SEED_SUPERADMIN_USERNAME").expect("SEED_SUPERADMIN_USERNAME must be set");
+
+        let seed_superadmin_password =
+            env::var("SEED_SUPERADMIN_PASSWORD").expect("SEED_SUPERADMIN_PASSWORD must be set");
+
         Ok(Self {
             database_url,
             host,
             port,
             jwt_secret,
+            seed_superadmin_email,
+            seed_superadmin_username,
+            seed_superadmin_password,
         })
     }
 }

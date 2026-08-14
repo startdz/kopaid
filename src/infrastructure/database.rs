@@ -1,7 +1,9 @@
+use argon2::{Argon2, PasswordHasher, password_hash::SaltString};
+use rand_core::OsRng;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use uuid::Uuid;
 
-use crate::errors::AppError;
+use crate::{config::Config, errors::AppError};
 
 pub async fn create_pool(database_url: &str) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
@@ -14,10 +16,11 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateE
     sqlx::migrate!("./migrations").run(pool).await
 }
 
-pub async fn run_seeds(pool: &PgPool) -> Result<(), AppError> {
+pub async fn run_seeds(pool: &PgPool, config: &Config) -> Result<(), AppError> {
     seed_roles(pool).await?;
     seed_permissions(pool).await?;
     seed_role_permissions(pool).await?;
+    seed_admin_user(pool, config).await?;
 
     Ok(())
 }
@@ -135,6 +138,77 @@ async fn seed_role_permissions(pool: &PgPool) -> Result<(), AppError> {
             AppError::Database
         })?;
     }
+
+    Ok(())
+}
+
+async fn seed_admin_user(pool: &PgPool, config: &Config) -> Result<(), AppError> {
+    let role = sqlx::query!(
+        r#"
+        SELECT id
+        FROM roles
+        WHERE name = 'SUPER_ADMIN'
+        "#
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|error| {
+        eprintln!("Failed to find SUPER_ADMIN role: {error}");
+        AppError::Database
+    })?;
+
+    let existing_user = sqlx::query!(
+        r#"
+        SELECT id
+        FROM users
+        WHERE email = $1
+        "#,
+        config.seed_superadmin_email
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| {
+        eprintln!("Failed to check admin user: {error}");
+        AppError::Database
+    })?;
+
+    if existing_user.is_some() {
+        return Ok(());
+    }
+
+    let salt = SaltString::generate(&mut OsRng);
+
+    let password_hash = Argon2::default()
+        .hash_password(config.seed_superadmin_password.as_bytes(), &salt)
+        .map_err(|error| {
+            eprintln!("Failed to hash admin password: {error}");
+            AppError::Internal
+        })?
+        .to_string();
+
+    sqlx::query!(
+        r#"
+        INSERT INTO users (
+            id,
+            username,
+            email,
+            password_hash,
+            role_id
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        "#,
+        Uuid::now_v7(),
+        config.seed_superadmin_username,
+        config.seed_superadmin_email,
+        password_hash,
+        role.id,
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        eprintln!("Failed to seed admin user: {error}");
+        AppError::Database
+    })?;
 
     Ok(())
 }

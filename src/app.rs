@@ -19,7 +19,9 @@ pub async fn run(config: Config) -> std::io::Result<()> {
     run_migrations(&pool)
         .await
         .expect("Failed to run migrations");
-    run_seeds(&pool).await.expect("Failed to run seeders");
+    run_seeds(&pool, &config)
+        .await
+        .expect("Failed to run seeders");
 
     let host = config.host.clone();
     let port = config.port;
