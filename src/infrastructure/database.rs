@@ -70,6 +70,11 @@ async fn seed_permissions(pool: &PgPool) -> Result<(), AppError> {
         ("saving_product:create", "Create saving product"),
         ("saving_product:update", "Update saving product"),
         ("saving_product:delete", "Delete saving product"),
+        ("savings:read", "Read savings accounts"),
+        ("savings:create", "Create savings accounts"),
+        ("savings:update", "Update savings accounts"),
+        ("savings:delete", "Delete savings accounts"),
+        ("savings:transaction", "Create savings transactions"),
     ];
 
     for (name, description) in permissions {

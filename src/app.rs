@@ -7,7 +7,9 @@ use crate::{
         members::handler::{create_member, list_members},
         permissions::handler::{create_permission, list_permissions},
         roles::handler::{assign_permission, create_role, list_roles},
+        savings::handler::{create_savings, create_savings_transaction, list_savings},
         savings_products::handler::{create_savings_products, list_savings_products},
+        savings_transactions::handler::list_savings_transactions,
         users::handler::{assign_role, create_user, list_users},
     },
 };
@@ -74,6 +76,19 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                                 web::scope("/savings-products")
                                     .route("", web::get().to(list_savings_products))
                                     .route("", web::post().to(create_savings_products)),
+                            )
+                            .service(
+                                web::scope("/savings")
+                                    .route("", web::get().to(list_savings))
+                                    .route("", web::post().to(create_savings))
+                                    .route(
+                                        "/transactions",
+                                        web::post().to(create_savings_transaction),
+                                    )
+                                    .route(
+                                        "/{savings_id}/transaction",
+                                        web::get().to(list_savings_transactions),
+                                    ),
                             )
                             // HEALTY CHECK
                             .service(

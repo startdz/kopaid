@@ -24,6 +24,12 @@ pub enum AppError {
 
     #[display("Forbidden")]
     Forbidden,
+
+    #[display("Insufficient balance")]
+    InsufficientBalance,
+
+    #[display("Invalid amount")]
+    InvalidAmount,
 }
 
 impl ResponseError for AppError {
@@ -70,6 +76,22 @@ impl ResponseError for AppError {
                     "message": "You do not have permission to perform this action"
                 }
             })),
+
+            Self::InvalidAmount => HttpResponse::UnprocessableEntity().json(serde_json::json!({
+                "error": {
+                    "code": "INVALID_AMOUNT",
+                    "message": "Amount must be greater than zero"
+                }
+            })),
+
+            Self::InsufficientBalance => {
+                HttpResponse::UnprocessableEntity().json(serde_json::json!({
+                    "error": {
+                        "code": "INSUFFICIENT_BALANCE",
+                        "message": "Insufficient balance"
+                    }
+                }))
+            }
 
             Self::Validation(error) => {
                 HttpResponse::InternalServerError().json(serde_json::json!({
